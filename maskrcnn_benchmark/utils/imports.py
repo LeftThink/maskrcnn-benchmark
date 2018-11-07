@@ -9,6 +9,9 @@ if torch._six.PY3:
 
     # from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     def import_file(module_name, file_path, make_importable=False):
+        # return a module spec based on a file location, to indicate
+        # that module is a package,set submodule_search_locations to 
+        # a list of directory paths.
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)

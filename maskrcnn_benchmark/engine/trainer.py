@@ -16,7 +16,7 @@ def reduce_loss_dict(loss_dict):
     0 has the averaged results. Returns a dict with the same fields as
     loss_dict, after reduction.
     """
-    world_size = get_world_size()
+    world_size = get_world_size() # e.g. 1
     if world_size < 2:
         return loss_dict
     with torch.no_grad():
@@ -53,19 +53,31 @@ def do_train(
     model.train()
     start_training_time = time.time()
     end = time.time()
+    avg_loss = 0.0
+    disp_iters = 200
+    
+    # start_iter,下标起始位置,注意不是从这个位置开始遍历,遍历仍然是从头开始 
     for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
         data_time = time.time() - end
         arguments["iteration"] = iteration
-
+        
         scheduler.step()
 
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
         loss_dict = model(images, targets)
-
+        
+        '''
+        loss_dict include:
+          - loss_classifier
+          - loss_box_reg
+          - loss_objectness
+          - loss_rpn_box_reg
+        '''
         losses = sum(loss for loss in loss_dict.values())
-
+        avg_loss += losses.item()
+        
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = reduce_loss_dict(loss_dict)
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
@@ -82,7 +94,9 @@ def do_train(
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
-        if iteration % 20 == 0 or iteration == (max_iter - 1):
+        if (iteration != 0) and (iteration % disp_iters == 0) or (iteration == (max_iter - 1)):
+            meters.update(avg_loss=avg_loss/disp_iters)
+            avg_loss = 0.0
             logger.info(
                 meters.delimiter.join(
                     [

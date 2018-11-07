@@ -3,29 +3,35 @@
 
 import os
 
-
+'''
+coco
+|_ coco_train2014
+|  |_ <im-1-name>.jpg
+|  |_ ...
+|  |_ <im-N-name>.jpg
+|_ coco_val2014
+|_ ...
+|_ annotations
+   |_ instances_train2014.json
+   |_ ...
+'''
 class DatasetCatalog(object):
     DATA_DIR = "datasets"
 
     DATASETS = {
         "coco_2014_train": (
-            "coco/train2014",
-            "coco/annotations/instances_train2014.json",
+            "coco/train2014",                           
+            "coco/annotations/instances_train2014.json", # annotation file
         ),
-        "coco_2014_val": ("coco/val2014", "coco/annotations/instances_val2014.json"),
-        "coco_2014_minival": (
-            "coco/val2014",
-            "coco/annotations/instances_minival2014.json",
-        ),
-        "coco_2014_valminusminival": (
-            "coco/val2014",
-            "coco/annotations/instances_valminusminival2014.json",
+        "coco_2014_val": (
+            "coco/val2014", 
+            "coco/annotations/instances_val2014.json"
         ),
     }
 
     @staticmethod
     def get(name):
-        if "coco" in name:
+        if "coco" in name: #e.g. "coco_2014_train"
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(

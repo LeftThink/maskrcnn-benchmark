@@ -1,3 +1,4 @@
+#! coding: utf-8
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 import torchvision
@@ -23,22 +24,25 @@ class COCODataset(torchvision.datasets.coco.CocoDetection):
                 if len(self.coco.getAnnIds(imgIds=img_id, iscrowd=None)) > 0
             ]
 
+        # coco下标最大值为90,但实际上只有80个类,有的地方跳过了,因此id不是连续的
+        # key为coco的非连续id, value为1~80的连续id,均为整数 
         self.json_category_id_to_contiguous_id = {
             v: i + 1 for i, v in enumerate(self.coco.getCatIds())
         }
+        
+        # key为1~80的连续id,value为coco的非连续id,均为整数
         self.contiguous_category_id_to_json_id = {
             v: k for k, v in self.json_category_id_to_contiguous_id.items()
         }
+
         self.id_to_img_map = {k: v for k, v in enumerate(self.ids)}
         self.transforms = transforms
 
     def __getitem__(self, idx):
         img, anno = super(COCODataset, self).__getitem__(idx)
-
         # filter crowd annotations
         # TODO might be better to add an extra field
         anno = [obj for obj in anno if obj["iscrowd"] == 0]
-
         boxes = [obj["bbox"] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         target = BoxList(boxes, img.size, mode="xywh").convert("xyxy")
@@ -47,15 +51,20 @@ class COCODataset(torchvision.datasets.coco.CocoDetection):
         classes = [self.json_category_id_to_contiguous_id[c] for c in classes]
         classes = torch.tensor(classes)
         target.add_field("labels", classes)
-
+      
+        '''
         masks = [obj["segmentation"] for obj in anno]
         masks = SegmentationMask(masks, img.size)
         target.add_field("masks", masks)
+        '''
 
         target = target.clip_to_image(remove_empty=True)
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
+
+        #zs for debug
+        #print(idx, anno, target)  
 
         return img, target, idx
 

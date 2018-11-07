@@ -34,7 +34,8 @@ def cache_url(url, model_dir=None, progress=True):
         model_dir = os.getenv('TORCH_MODEL_ZOO', os.path.join(torch_home, 'models'))
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
-    parts = urlparse(url)
+    # e.g. https://s3-us-west-2.amazonaws.com/detectron/ImageNetPretrained/MSRA/R-101.pkl
+    parts = urlparse(url) 
     filename = os.path.basename(parts.path)
     if filename == "model_final.pkl":
         # workaround as pre-trained Caffe2 models from Detectron have all the same filename
